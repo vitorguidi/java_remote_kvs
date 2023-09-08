@@ -73,19 +73,20 @@ public class Server {
     }
 
     private String handleCommand(String msg) {
-        String[] parts = msg.split(" ");
-        if (parts.length < 2 || parts.length > 3 || parts[0] != "GET" || parts[1] != "SET") {
-            return "unrecognized command";
+        String[] parts = msg.replaceAll("\n", "").split(" ");
+        if (parts.length < 2 || parts.length > 3 ||  (!"GET".equals(parts[0]) && !"SET".equals(parts[0]))) {
+            return "unrecognized command\n";
         }
-        if (parts[0] == "GET") {
-            String key = parts[0];
-            return store.get(key) == null ? "Key not found" : store.get(key);
+        if ("GET".equals(parts[0])) {
+            String key = parts[1];
+            String val = store.get(key);
+            return val == null ? "Key not found\n" : val + "\n";
         }
         else {
             String key = parts[1];
             String val = parts[2];
             store.put(key, val);
-            return "OK";
+            return "OK\n";
         }
     }
 
@@ -94,7 +95,9 @@ public class Server {
         int readBytes = sChannel.read(buff);
         if (readBytes > 0) {
             buff.flip();
-            return new String(buff.array());
+            ByteBuffer copyBuffer = ByteBuffer.allocate(readBytes);
+            copyBuffer.put(buff);
+            return new String(copyBuffer.array());
         }
         return "No message content received";
     }
