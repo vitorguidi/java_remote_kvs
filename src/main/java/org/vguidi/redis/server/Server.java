@@ -1,5 +1,8 @@
 package org.vguidi.redis.server;
 
+import org.vguidi.redis.kvs.HashMapKVS;
+import org.vguidi.redis.kvs.IKvs;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -14,6 +17,7 @@ public class Server {
 
     private ServerSocketChannel serverSocket;
     private Selector selector;
+    private IKvs store;
     int port;
 
     public Server(int port) throws IOException {
@@ -23,6 +27,7 @@ public class Server {
         serverSocket.socket().bind(new InetSocketAddress(port));
         selector = Selector.open();
         serverSocket.register(selector, SelectionKey.OP_ACCEPT);
+        this.store = new HashMapKVS();
     }
 
     public void serve() throws IOException {
@@ -63,7 +68,25 @@ public class Server {
     private void handleRead(SelectionKey key) throws IOException {
         SocketChannel destSocket = (SocketChannel) key.channel();
         String msg = readFromSocket(destSocket);
-        writeToSocket(msg, destSocket);
+        String ans = handleCommand(msg);
+        writeToSocket(ans, destSocket);
+    }
+
+    private String handleCommand(String msg) {
+        String[] parts = msg.split(" ");
+        if (parts.length < 2 || parts.length > 3 || parts[0] != "GET" || parts[1] != "SET") {
+            return "unrecognized command";
+        }
+        if (parts[0] == "GET") {
+            String key = parts[0];
+            return store.get(key) == null ? "Key not found" : store.get(key);
+        }
+        else {
+            String key = parts[1];
+            String val = parts[2];
+            store.put(key, val);
+            return "OK";
+        }
     }
 
     private String readFromSocket(SocketChannel sChannel) throws IOException {

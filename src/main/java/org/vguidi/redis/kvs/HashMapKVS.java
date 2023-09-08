@@ -4,19 +4,19 @@ import java.util.HashMap;
 
 public class HashMapKVS implements IKvs {
 
-    private HashMap<Byte[], Byte[]> store;
+    private HashMap<String, String> store;
 
     public HashMapKVS() {
         store = new HashMap<>();
     }
 
     @Override
-    public Byte[] get(Byte[] key) {
+    public String get(String key) {
         return store.get(key);
     }
 
     @Override
-    public void put(Byte[] key, Byte[] value) {
+    public void put(String key, String value) {
         store.put(key, value);
     }
 }
